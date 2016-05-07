@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import os, sys
+import subprocess
 from time import time
 import random
 
@@ -9,6 +10,11 @@ BYTE, KB, MB, GB, TB = [2**(10*i) for i in range(5)]
 def assert_multiple(n, divider):
     "n is multiple of divider"
     assert n % divider == 0, "{} is not mutliple of {}".format(n, divider)
+
+def drop_caches():
+    subprocess.call("sync", shell=True)
+    cmd = "echo 3 > /proc/sys/vm/drop_caches"
+    subprocess.call(cmd, shell=True)
 
 class Request(object):
     def __init__(self, op, offset, size):
@@ -67,13 +73,14 @@ class Sequential(PatternBase, InitMixin):
         raise StopIteration
 
 
-def access_file(filepath, pattern_iter):
+def access_file(filepath, pattern_iter, dofsync):
     fd = os.open(filepath, os.O_RDWR|os.O_CREAT )
     for req in pattern_iter:
         if req.op == WRITE:
             os.lseek(fd, req.offset, os.SEEK_SET)
             os.write(fd, 'x' * req.size)
-            # os.fsync(fd)
+            if dofsync:
+                os.fsync(fd)
         elif req.op == READ:
             os.lseek(fd, req.offset, os.SEEK_SET)
             os.read(fd, req.size)
@@ -82,17 +89,19 @@ def access_file(filepath, pattern_iter):
 
 
 class Experiment(object):
-    def __init__(self, exp_name, classname, **kwargs):
+    def __init__(self, file_name, exp_name, classname, dofsync, **kwargs):
         self.paras = kwargs
+        self.file_name = file_name
         self.exp_name = exp_name
         self.classname = classname
+        self.dofsync = dofsync
 
     def run(self):
-        start = time()
-
         patclass = eval(self.classname)
         pat_iter = patclass(**self.paras)
-        access_file(self.exp_name + '.data', pat_iter)
+
+        start = time()
+        access_file(self.file_name, pat_iter, self.dofsync)
 
         end = time()
         dur = end - start
@@ -100,24 +109,58 @@ class Experiment(object):
         self.print_stats(dur)
 
     def print_stats(self, duration):
-        print self.exp_name, duration
+        print 'py', self.exp_name, duration
 
 
 def main():
     exps = [
-            {'exp_name':'RandomWrite001',
+            {'exp_name':'RandSmallWriteFsync',
+            'file_name': 'pydata',
             'classname':'Random',
+            'dofsync': True,
             'op':WRITE, 'zone_offset':0, 'zone_size':128*MB,
-            'chunk_size':2*KB, 'traffic_size':128*MB},
+            'chunk_size':4*KB, 'traffic_size':128*MB},
 
-            {'exp_name':'SequentialWrite001',
+            {'exp_name':'SeqSmallWriteNoFsync',
+            'file_name': 'pydata',
             'classname':'Sequential',
+            'dofsync': False,
             'op':WRITE, 'zone_offset':0, 'zone_size':128*MB,
-            'chunk_size':2*KB, 'traffic_size':128*MB}]
+            'chunk_size':4*KB, 'traffic_size':128*MB},
+
+            {'exp_name':'SeqSmallWriteFsync',
+            'file_name': 'pydata',
+            'classname':'Sequential',
+            'dofsync': True,
+            'op':WRITE, 'zone_offset':0, 'zone_size':128*MB,
+            'chunk_size':4*KB, 'traffic_size':128*MB},
+
+            {'exp_name':'SeqSmallRead',
+            'file_name': 'pydata',
+            'classname':'Sequential',
+            'dofsync': False,
+            'op':READ, 'zone_offset':0, 'zone_size':128*MB,
+            'chunk_size':4*KB, 'traffic_size':128*MB},
+
+            {'exp_name':'SeqBigRead',
+            'file_name': 'pydata',
+            'classname':'Sequential',
+            'dofsync': False,
+            'op':READ, 'zone_offset':0, 'zone_size':128*MB,
+            'chunk_size':128*MB, 'traffic_size':128*MB},
+
+            {'exp_name':'RandSmallRead',
+            'file_name': 'pydata',
+            'classname':'Random',
+            'dofsync': False,
+            'op':READ, 'zone_offset':0, 'zone_size':128*MB,
+            'chunk_size':4*KB, 'traffic_size':128*MB}
+            ]
 
     for setting in exps:
         expobj = Experiment(**setting)
         expobj.run()
+        drop_caches()
 
 if __name__ == '__main__':
     main()

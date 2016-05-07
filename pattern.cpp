@@ -16,12 +16,18 @@
 #define WRITE 1
 #define RANDOM 2
 #define SEQUENTIAL 3
+#define DOFSYNC 4
+#define DONOTFSYNC 5
 
 #define KB 1024
 #define MB 1024*1024
 
-void access_file(const char *filepath, int chunk_size, int file_size, int rw, 
-        int pattern)
+typedef int t_pat;
+typedef int t_rw;
+typedef bool t_fsync;
+
+void access_file(const char *filepath, int chunk_size, int file_size, t_rw rw, 
+        t_pat pattern, t_fsync dofsync)
 {
     int fd;
     int n_chunks;
@@ -45,10 +51,13 @@ void access_file(const char *filepath, int chunk_size, int file_size, int rw,
 
         if (rw == WRITE) {
             pwrite(fd, buf, chunk_size, offset);
-            printf("pwrite %d %d\n", chunk_size, offset);
+            // printf("pwrite %d %d\n", chunk_size, offset);
+            if (dofsync) {
+                fsync(fd);
+            }
         } else if (rw == READ) {
             pread(fd, buf, chunk_size, offset);
-            printf("pread %d %d\n", chunk_size, offset);
+            // printf("pread %d %d\n", chunk_size, offset);
         } else {
             printf("ERROR");
             exit(1);
@@ -57,22 +66,101 @@ void access_file(const char *filepath, int chunk_size, int file_size, int rw,
     close(fd);
 }
 
+std::string exec(const char* cmd) {
+    FILE* pipe = popen(cmd, "r");
+    if (!pipe) return "ERROR";
+    char buffer[128];
+    std::string result = "";
+    while(!feof(pipe)) {
+        if(fgets(buffer, 128, pipe) != NULL)
+            result += buffer;
+    }
+    pclose(pipe);
+    return result;
+}
 
-int main(int argc, char **argv)
+void drop_caches() 
+{
+    exec("sync");
+    exec("echo 3 > tmp");
+}
+
+class Parameter
+{
+    public:
+        std::string exp_name;
+        std::string file_name;
+        t_pat pattern;
+        int chunk_size;
+        int file_size;
+        t_pat rw;
+        t_fsync dofsync;
+
+    Parameter(std::string my_exp_name, std::string my_file_name, t_pat my_pattern, 
+            int my_chunk_size, int my_file_size, t_rw my_rw, t_fsync my_dofsync):
+        exp_name(my_exp_name),
+        file_name(my_file_name),
+        pattern(my_pattern),
+        chunk_size(my_chunk_size),
+        file_size(my_file_size),
+        rw(my_rw),
+        dofsync(my_dofsync)
+    {}
+};
+
+
+class Experiment
+{
+    public:
+        Parameter _para;
+
+        Experiment(Parameter);
+        void run();
+};
+
+Experiment::Experiment(Parameter my_para):
+    _para(my_para)
+{
+}
+
+void Experiment::run()
 {
     struct timeval start, end, result;
+    std::string filename;
 
     gettimeofday(&start, NULL);
 
-    access_file("bar2", 2*KB, 2*KB, WRITE, SEQUENTIAL);
+    access_file(_para.file_name.c_str(), _para.chunk_size, _para.file_size, 
+            _para.rw, _para.pattern, _para.dofsync);
 
     gettimeofday(&end, NULL);
 
     timersub(&end, &start, &result);
 
-    printf("--- Performance ---\n");
-    printf("duration %ld.%ld\n", result.tv_sec, result.tv_usec);
-    printf("start    %ld.%ld\n", start.tv_sec, start.tv_usec);
-    printf("end      %ld.%ld\n", end.tv_sec, end.tv_usec);
+    printf("cpp %s %ld.%ld\n", _para.exp_name.c_str(), result.tv_sec, result.tv_usec);
+
+}
+
+int main(int argc, char **argv)
+{
+    Parameter exps[] = {
+        Parameter("RandSmallWriteFsync", "cppdata", RANDOM, 4*KB, 128*MB, WRITE, true),
+        Parameter("SeqSmallWriteNoFsync", "cppdata", SEQUENTIAL, 4*KB, 128*MB, WRITE, false),
+        Parameter("SeqSmallWriteFsync", "cppdata", SEQUENTIAL, 4*KB, 128*MB, WRITE, true),
+        Parameter("SeqSmallRead", "cppdata", SEQUENTIAL, 4*KB, 128*MB, READ, false),
+        Parameter("SeqBigRead", "cppdata", SEQUENTIAL, 128*MB, 128*MB, READ, false),
+        Parameter("RandSmallRead", "cppdata", RANDOM, 4*KB, 128*MB, READ, false)
+        };
+    int i;
+    int n;
+
+    n = sizeof(exps) / sizeof(Parameter);
+    for (i = 0; i < n; i++) {
+        Experiment exp = Experiment(exps[i]);
+        exp.run();
+        drop_caches();
+    }
+
+    return 0;
 }
 
