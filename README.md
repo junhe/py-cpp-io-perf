@@ -28,13 +28,15 @@ Then:
 ```
 $ make pythonrun
 ```
-## To run C++ benchmark:
 
+## To run C++ benchmark:
+```
 $ make cpprun
+```
 
 ## To run Python and cpp benchmarks together:
-
+```
 $ make run
-
+```
 
 
