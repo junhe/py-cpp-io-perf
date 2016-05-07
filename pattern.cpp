@@ -142,8 +142,6 @@ void Experiment::run()
     std::string filepath;
 
     filepath = _para.target_folder + "/" + _para.file_name;
-    std::cout << "filepath: " << filepath << std::endl;
-
 
     gettimeofday(&start, NULL);
 
