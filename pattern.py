@@ -16,6 +16,13 @@ def drop_caches():
     cmd = "echo 3 > /proc/sys/vm/drop_caches"
     subprocess.call(cmd, shell=True)
 
+def get_target_foler():
+    if len(sys.argv) != 2:
+        print "Usage: {} target-folder".format(sys.argv[0])
+        exit(1)
+
+    return sys.argv[1]
+
 class Request(object):
     def __init__(self, op, offset, size):
         self.op = op
@@ -89,9 +96,10 @@ def access_file(filepath, pattern_iter, dofsync):
 
 
 class Experiment(object):
-    def __init__(self, file_name, exp_name, classname, dofsync, **kwargs):
+    def __init__(self, file_name, exp_name, target_folder, classname, dofsync, **kwargs):
         self.paras = kwargs
         self.file_name = file_name
+        self.target_folder = target_folder
         self.exp_name = exp_name
         self.classname = classname
         self.dofsync = dofsync
@@ -99,9 +107,10 @@ class Experiment(object):
     def run(self):
         patclass = eval(self.classname)
         pat_iter = patclass(**self.paras)
+        filepath = os.path.join(self.target_folder, self.file_name)
 
         start = time()
-        access_file(self.file_name, pat_iter, self.dofsync)
+        access_file(filepath, pat_iter, self.dofsync)
 
         end = time()
         dur = end - start
@@ -113,8 +122,11 @@ class Experiment(object):
 
 
 def main():
+    target_folder = get_target_foler()
+
     exps = [
             {'exp_name':'SeqSmallWriteNoFsync',
+            'target_folder': target_folder,
             'file_name': 'pydata',
             'classname':'Sequential',
             'dofsync': False,
@@ -122,6 +134,7 @@ def main():
             'chunk_size':4*KB, 'traffic_size':128*MB},
 
             {'exp_name':'RandSmallWriteFsync',
+            'target_folder': target_folder,
             'file_name': 'pydata',
             'classname':'Random',
             'dofsync': True,
@@ -129,6 +142,7 @@ def main():
             'chunk_size':4*KB, 'traffic_size':128*MB},
 
             {'exp_name':'SeqSmallWriteFsync',
+            'target_folder': target_folder,
             'file_name': 'pydata',
             'classname':'Sequential',
             'dofsync': True,
@@ -136,6 +150,7 @@ def main():
             'chunk_size':4*KB, 'traffic_size':128*MB},
 
             {'exp_name':'SeqSmallRead',
+            'target_folder': target_folder,
             'file_name': 'pydata',
             'classname':'Sequential',
             'dofsync': False,
@@ -143,6 +158,7 @@ def main():
             'chunk_size':4*KB, 'traffic_size':128*MB},
 
             {'exp_name':'SeqBigRead',
+            'target_folder': target_folder,
             'file_name': 'pydata',
             'classname':'Sequential',
             'dofsync': False,
@@ -150,6 +166,7 @@ def main():
             'chunk_size':128*MB, 'traffic_size':128*MB},
 
             {'exp_name':'RandSmallRead',
+            'target_folder': target_folder,
             'file_name': 'pydata',
             'classname':'Random',
             'dofsync': False,
