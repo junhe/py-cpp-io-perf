@@ -1,6 +1,6 @@
-targetfolder=/tmp/
-pythonpath=/home/jun/workdir/pypy-5.1.1-linux64/bin/pypy
-#pythonpath=python
+targetfolder=/tmp
+pythonpath=python
+#pythonpath=/users/jhe//pypy-5.1.1-linux64/bin/pypy
 
 all:
 	g++ -o pattern pattern.cpp
