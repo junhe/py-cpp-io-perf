@@ -82,7 +82,7 @@ std::string exec(const char* cmd) {
 void drop_caches() 
 {
     exec("sync");
-    exec("echo 3 > tmp");
+    exec("echo 3 > /proc/sys/vm/drop_caches");
 }
 
 class Parameter
