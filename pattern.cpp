@@ -85,9 +85,19 @@ void drop_caches()
     exec("echo 3 > /proc/sys/vm/drop_caches");
 }
 
+void check_arguments(int argc, char **argv)
+{    
+    if (argc != 2) {
+        printf("Usage: %s target-folder\n", argv[0]);
+        printf("Example: %s /tmp\n", argv[0]);
+        exit(1);
+    }
+}
+
 class Parameter
 {
     public:
+        std::string target_folder;
         std::string exp_name;
         std::string file_name;
         t_pat pattern;
@@ -96,8 +106,11 @@ class Parameter
         t_pat rw;
         t_fsync dofsync;
 
-    Parameter(std::string my_exp_name, std::string my_file_name, t_pat my_pattern, 
-            int my_chunk_size, int my_file_size, t_rw my_rw, t_fsync my_dofsync):
+    Parameter(std::string my_target_folder, std::string my_exp_name, 
+            std::string my_file_name, t_pat my_pattern, 
+            int my_chunk_size, int my_file_size, t_rw my_rw, 
+            t_fsync my_dofsync):
+        target_folder(my_target_folder),
         exp_name(my_exp_name),
         file_name(my_file_name),
         pattern(my_pattern),
@@ -126,11 +139,15 @@ Experiment::Experiment(Parameter my_para):
 void Experiment::run()
 {
     struct timeval start, end, result;
-    std::string filename;
+    std::string filepath;
+
+    filepath = _para.target_folder + "/" + _para.file_name;
+    std::cout << "filepath: " << filepath << std::endl;
+
 
     gettimeofday(&start, NULL);
 
-    access_file(_para.file_name.c_str(), _para.chunk_size, _para.file_size, 
+    access_file(filepath.c_str(), _para.chunk_size, _para.file_size, 
             _para.rw, _para.pattern, _para.dofsync);
 
     gettimeofday(&end, NULL);
@@ -141,18 +158,25 @@ void Experiment::run()
 
 }
 
+
 int main(int argc, char **argv)
 {
-    Parameter exps[] = {
-        Parameter("RandSmallWriteFsync", "cppdata", RANDOM, 4*KB, 128*MB, WRITE, true),
-        Parameter("SeqSmallWriteNoFsync", "cppdata", SEQUENTIAL, 4*KB, 128*MB, WRITE, false),
-        Parameter("SeqSmallWriteFsync", "cppdata", SEQUENTIAL, 4*KB, 128*MB, WRITE, true),
-        Parameter("SeqSmallRead", "cppdata", SEQUENTIAL, 4*KB, 128*MB, READ, false),
-        Parameter("SeqBigRead", "cppdata", SEQUENTIAL, 128*MB, 128*MB, READ, false),
-        Parameter("RandSmallRead", "cppdata", RANDOM, 4*KB, 128*MB, READ, false)
-        };
     int i;
     int n;
+
+    check_arguments(argc, argv);
+
+    std::string target_folder = std::string(argv[1]);
+
+    Parameter exps[] = {
+        Parameter(target_folder, "SeqSmallWriteNoFsync", "cppdata", SEQUENTIAL, 4*KB, 128*MB, WRITE, false),
+        Parameter(target_folder, "RandSmallWriteFsync", "cppdata", RANDOM, 4*KB, 128*MB, WRITE, true),
+        Parameter(target_folder, "SeqSmallWriteFsync", "cppdata", SEQUENTIAL, 4*KB, 128*MB, WRITE, true),
+        Parameter(target_folder, "SeqSmallRead", "cppdata", SEQUENTIAL, 4*KB, 128*MB, READ, false),
+        Parameter(target_folder, "SeqBigRead", "cppdata", SEQUENTIAL, 128*MB, 128*MB, READ, false),
+        Parameter(target_folder, "RandSmallRead", "cppdata", RANDOM, 4*KB, 128*MB, READ, false)
+        };
+
 
     n = sizeof(exps) / sizeof(Parameter);
     for (i = 0; i < n; i++) {
