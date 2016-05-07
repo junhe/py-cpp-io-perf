@@ -14,18 +14,20 @@ can improve Python performance, we also can run the Python benchmark with pypy.
 
 ## To run Python benchmark:
 
-  $ make pythonrun
+```
+$ make pythonrun
+```
 
 ## To run Python benchmark with Pypy:
 
 Edit Makefile, change pythonpath to your pypy path. For example:
-
+```
 pythonpath=/users/jhe//pypy-5.1.1-linux64/bin/pypy
-
+```
 Then:
-
+```
 $ make pythonrun
-
+```
 ## To run C++ benchmark:
 
 $ make cpprun
