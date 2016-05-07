@@ -14,7 +14,7 @@ can improve Python performance, we also can run the Python benchmark with pypy.
 
 ## To run Python benchmark:
 
-`$ make pythonrun`
+  $ make pythonrun
 
 ## To run Python benchmark with Pypy:
 
