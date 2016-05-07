@@ -1,4 +1,6 @@
 targetfolder=/tmp/
+pythonpath=/home/jun/workdir/pypy-5.1.1-linux64/bin/pypy
+#pythonpath=python
 
 all:
 	g++ -o pattern pattern.cpp
@@ -6,13 +8,16 @@ all:
 run: 
 	g++ -o pattern pattern.cpp
 
-	python pattern.py ${targetfolder}
+	${pythonpath} pattern.py ${targetfolder}
 	./pattern ${targetfolder}
 	./pattern ${targetfolder}
-	python pattern.py ${targetfolder}
+	${pythonpath} pattern.py ${targetfolder}
 
 pythonrun:
-	python pattern.py ${targetfolder}
+	${pythonpath} pattern.py ${targetfolder}
+
+pypyrun:
+	${pythonpath} pattern.py ${targetfolder}
 
 cpprun:
 	g++ -o pattern pattern.cpp
