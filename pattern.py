@@ -114,17 +114,17 @@ class Experiment(object):
 
 def main():
     exps = [
-            {'exp_name':'RandSmallWriteFsync',
-            'file_name': 'pydata',
-            'classname':'Random',
-            'dofsync': True,
-            'op':WRITE, 'zone_offset':0, 'zone_size':128*MB,
-            'chunk_size':4*KB, 'traffic_size':128*MB},
-
             {'exp_name':'SeqSmallWriteNoFsync',
             'file_name': 'pydata',
             'classname':'Sequential',
             'dofsync': False,
+            'op':WRITE, 'zone_offset':0, 'zone_size':128*MB,
+            'chunk_size':4*KB, 'traffic_size':128*MB},
+
+            {'exp_name':'RandSmallWriteFsync',
+            'file_name': 'pydata',
+            'classname':'Random',
+            'dofsync': True,
             'op':WRITE, 'zone_offset':0, 'zone_size':128*MB,
             'chunk_size':4*KB, 'traffic_size':128*MB},
 
