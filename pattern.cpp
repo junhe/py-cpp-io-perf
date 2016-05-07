@@ -157,8 +157,9 @@ int main(int argc, char **argv)
     n = sizeof(exps) / sizeof(Parameter);
     for (i = 0; i < n; i++) {
         Experiment exp = Experiment(exps[i]);
-        exp.run();
+        sleep(1);
         drop_caches();
+        exp.run();
     }
 
     return 0;

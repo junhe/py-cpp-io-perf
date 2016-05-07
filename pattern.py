@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import os, sys
 import subprocess
-from time import time
+from time import time, sleep
 import random
 
 READ, WRITE, DISCARD = ('opread', 'opwrite', 'opdiscard')
@@ -159,8 +159,9 @@ def main():
 
     for setting in exps:
         expobj = Experiment(**setting)
-        expobj.run()
         drop_caches()
+        sleep(1)
+        expobj.run()
 
 if __name__ == '__main__':
     main()

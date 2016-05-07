@@ -2,14 +2,14 @@ all:
 	g++ -o pattern pattern.cpp
 
 run: 
-	python pattern.py
-
 	g++ -o pattern pattern.cpp
-	./pattern
-
-	./pattern
 
 	python pattern.py
+	python pattern.py
+	./pattern
+	./pattern
+	python pattern.py
+	./pattern
 
 pythonrun:
 	python pattern.py
