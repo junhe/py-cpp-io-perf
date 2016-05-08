@@ -23,10 +23,10 @@
 #define MB 1024*1024
 
 typedef int t_pat;
-typedef int t_rw;
+typedef int t_op;
 typedef bool t_fsync;
 
-void access_file(const char *filepath, int chunk_size, int file_size, t_rw rw, 
+void access_file(const char *filepath, int chunk_size, int file_size, t_op op, 
         t_pat pattern, t_fsync dofsync)
 {
     int fd;
@@ -49,13 +49,13 @@ void access_file(const char *filepath, int chunk_size, int file_size, t_rw rw,
             exit(1);
         }
 
-        if (rw == WRITE) {
+        if (op == WRITE) {
             pwrite(fd, buf, chunk_size, offset);
             // printf("pwrite %d %d\n", chunk_size, offset);
             if (dofsync) {
                 fsync(fd);
             }
-        } else if (rw == READ) {
+        } else if (op == READ) {
             pread(fd, buf, chunk_size, offset);
             // printf("pread %d %d\n", chunk_size, offset);
         } else {
@@ -103,12 +103,12 @@ class Parameter
         t_pat pattern;
         int chunk_size;
         int file_size;
-        t_pat rw;
+        t_pat op;
         t_fsync dofsync;
 
     Parameter(std::string my_target_folder, std::string my_exp_name, 
             std::string my_file_name, t_pat my_pattern, 
-            int my_chunk_size, int my_file_size, t_rw my_rw, 
+            int my_chunk_size, int my_file_size, t_op my_op, 
             t_fsync my_dofsync):
         target_folder(my_target_folder),
         exp_name(my_exp_name),
@@ -116,7 +116,7 @@ class Parameter
         pattern(my_pattern),
         chunk_size(my_chunk_size),
         file_size(my_file_size),
-        rw(my_rw),
+        op(my_op),
         dofsync(my_dofsync)
     {}
 };
@@ -146,7 +146,7 @@ void Experiment::run()
     gettimeofday(&start, NULL);
 
     access_file(filepath.c_str(), _para.chunk_size, _para.file_size, 
-            _para.rw, _para.pattern, _para.dofsync);
+            _para.op, _para.pattern, _para.dofsync);
 
     gettimeofday(&end, NULL);
 
