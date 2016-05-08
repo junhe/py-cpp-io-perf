@@ -4,7 +4,11 @@ import subprocess
 from time import time, sleep
 import random
 
-from pyfallocate import fallocate
+try:
+    from pyfallocate import fallocate
+except ImportError:
+    print "Failed to import pyfallocate, did you do python fallocate_build.py?"
+    exit(1)
 
 READ, WRITE, DISCARD = ('opread', 'opwrite', 'opdiscard')
 BYTE, KB, MB, GB, TB = [2**(10*i) for i in range(5)]
