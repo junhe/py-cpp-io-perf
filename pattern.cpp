@@ -14,10 +14,11 @@
 
 #define READ 0
 #define WRITE 1
-#define RANDOM 2
-#define SEQUENTIAL 3
-#define DOFSYNC 4
-#define DONOTFSYNC 5
+#define DISCARD 3
+#define RANDOM 4 
+#define SEQUENTIAL 5
+#define DOFSYNC 6
+#define DONOTFSYNC 7
 
 #define KB 1024
 #define MB 1024*1024
@@ -51,13 +52,13 @@ void access_file(const char *filepath, int chunk_size, int file_size, t_op op,
 
         if (op == WRITE) {
             pwrite(fd, buf, chunk_size, offset);
-            // printf("pwrite %d %d\n", chunk_size, offset);
             if (dofsync) {
                 fsync(fd);
             }
         } else if (op == READ) {
             pread(fd, buf, chunk_size, offset);
-            // printf("pread %d %d\n", chunk_size, offset);
+        } else if (op == DISCARD) {
+            fallocate(fd, 3, offset, chunk_size);
         } else {
             printf("ERROR");
             exit(1);
@@ -168,6 +169,9 @@ int main(int argc, char **argv)
 
     Parameter exps[] = {
         Parameter(target_folder, "SeqSmallWriteNoFsync", "cppdata", SEQUENTIAL, 4*KB, 128*MB, WRITE, false),
+        Parameter(target_folder, "SeqBigDiscard", "cppdata", SEQUENTIAL, 128*MB, 128*MB, DISCARD, false),
+        Parameter(target_folder, "SeqBigWriteFsync", "cppdata", SEQUENTIAL, 128*MB, 128*MB, WRITE, true),
+        Parameter(target_folder, "RandSmallDiscard", "cppdata", RANDOM, 4*KB, 128*MB, DISCARD, false),
         Parameter(target_folder, "RandSmallWriteFsync", "cppdata", RANDOM, 4*KB, 128*MB, WRITE, true),
         Parameter(target_folder, "SeqSmallWriteFsync", "cppdata", SEQUENTIAL, 4*KB, 128*MB, WRITE, true),
         Parameter(target_folder, "SeqSmallRead", "cppdata", SEQUENTIAL, 4*KB, 128*MB, READ, false),

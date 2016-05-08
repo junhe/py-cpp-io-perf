@@ -4,6 +4,8 @@ import subprocess
 from time import time, sleep
 import random
 
+from pyfallocate import fallocate
+
 READ, WRITE, DISCARD = ('opread', 'opwrite', 'opdiscard')
 BYTE, KB, MB, GB, TB = [2**(10*i) for i in range(5)]
 
@@ -91,6 +93,8 @@ def access_file(filepath, pattern_iter, dofsync):
         elif req.op == READ:
             os.lseek(fd, req.offset, os.SEEK_SET)
             os.read(fd, req.size)
+        elif req.op == DISCARD:
+            fallocate(fd, 3, req.offset, req.size)
 
     os.close( fd )
 
@@ -131,6 +135,30 @@ def main():
             'classname':'Sequential',
             'dofsync': False,
             'op':WRITE, 'zone_offset':0, 'zone_size':128*MB,
+            'chunk_size':4*KB, 'traffic_size':128*MB},
+
+            {'exp_name':'SeqBigDiscard',
+            'target_folder': target_folder,
+            'file_name': 'pydata',
+            'classname':'Sequential',
+            'dofsync': False,
+            'op':DISCARD, 'zone_offset':0, 'zone_size':128*MB,
+            'chunk_size':128*MB, 'traffic_size':128*MB},
+
+            {'exp_name':'SeqBigWriteFsync',
+            'target_folder': target_folder,
+            'file_name': 'pydata',
+            'classname':'Sequential',
+            'dofsync': True,
+            'op':WRITE, 'zone_offset':0, 'zone_size':128*MB,
+            'chunk_size':128*MB, 'traffic_size':128*MB},
+
+            {'exp_name':'RandSmallDiscard',
+            'target_folder': target_folder,
+            'file_name': 'pydata',
+            'classname':'Random',
+            'dofsync': False,
+            'op':DISCARD, 'zone_offset':0, 'zone_size':128*MB,
             'chunk_size':4*KB, 'traffic_size':128*MB},
 
             {'exp_name':'RandSmallWriteFsync',
